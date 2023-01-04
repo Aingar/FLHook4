@@ -42,7 +42,7 @@ namespace Hk::Player
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	cpp::result<const int, Error> GetCash(const std::variant<uint, std::wstring>& player)
+	cpp::result<const uint, Error> GetCash(const std::variant<uint, std::wstring>& player)
 	{
 		if (ClientId client = Hk::Client::ExtractClientID(player); client != UINT_MAX)
 		{
@@ -51,7 +51,7 @@ namespace Hk::Player
 
 			int cash;
 			pub::Player::InspectCash(client, cash);
-			return cash;
+			return static_cast<uint>(cash);
 		}
 
 		if (!player.index())
@@ -82,17 +82,17 @@ namespace Hk::Player
 			if (!flc_decode(scCharFile.c_str(), scCharFileNew.c_str()))
 				return cpp::fail(Error::CouldNotDecodeCharFile);
 
-			int cash = IniGetI(scCharFileNew, "Player", "money", -1);
+			uint cash = static_cast<uint>(IniGetI(scCharFileNew, "Player", "money", -1));
 			DeleteFile(scCharFileNew.c_str());
 			return cash;
 		}
 
-		return IniGetI(scCharFile, "Player", "money", -1);
+		return static_cast<uint>(IniGetI(scCharFile, "Player", "money", -1));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	cpp::result<void, Error> AddCash(const std::variant<uint, std::wstring>& player, int iAmount)
+	cpp::result<void, Error> AdjustCash(const std::variant<uint, std::wstring>& player, int iAmount)
 	{
 		ClientId client = Hk::Client::ExtractClientID(player);
 
@@ -157,7 +157,7 @@ namespace Hk::Player
 			{
 				if (money.character == characterLower)
 				{
-					money.iAmount += iAmount;
+					money.uAmount += iAmount;
 					bFound = true;
 					break;
 				}
@@ -167,12 +167,22 @@ namespace Hk::Player
 			{
 				MONEY_FIX mf;
 				mf.character = characterLower;
-				mf.iAmount = iAmount;
+				mf.uAmount = iAmount;
 				ClientInfo[client].lstMoneyFix.push_back(mf);
 			}
 		}
 
 		return {};
+	}
+
+	cpp::result<void, Error> AddCash(const std::variant<uint, std::wstring>& player, uint uAmount)
+	{
+		return AdjustCash(player, static_cast<int>(uAmount));
+	}
+
+	cpp::result<void, Error> RemoveCash(const std::variant<uint, std::wstring>& player, uint uAmount)
+	{
+		return AdjustCash(player, -static_cast<int>(uAmount));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -937,20 +947,20 @@ namespace Hk::Player
 					buy.iCount = iNewCount;
 			}
 
-			int iCost = ((int)fPrice * buy.iCount);
-			if (cash < iCost)
+			uint uCost = ((uint)fPrice * buy.iCount);
+			if (cash < uCost)
 				PrintUserCmdText(client, L"Auto-Buy(%s): FAILED! Insufficient Credits", buy.wscDescription.c_str());
 			else
 			{
-				AddCash(client, -iCost);
-				cash -= iCost;
+				RemoveCash(client, uCost);
+				cash -= uCost;
 				iRemHoldSize -= ((int)eq->fVolume * buy.iCount);
 
 				// add the item, dont use addcargo for performance/bug reasons
 				// assume we only mount multicount goods (missiles, ammo, bots)
 				pub::Player::AddCargo(client, buy.iArchId, buy.iCount, 1, false);
 
-				PrintUserCmdText(client, L"Auto-Buy(%s): Bought %u unit(s), cost: %s$", buy.wscDescription.c_str(), buy.iCount, ToMoneyStr(iCost).c_str());
+				PrintUserCmdText(client, L"Auto-Buy(%s): Bought %u unit(s), cost: %s$", buy.wscDescription.c_str(), buy.iCount, ToMoneyStr(uCost).c_str());
 			}
 		}
 	}
@@ -1717,7 +1727,7 @@ namespace Hk::Player
 		return szSystemname;
 	}
 
-	cpp::result<const float, Error> GetShipValue(const std::variant<uint, std::wstring>& player)
+	cpp::result<const uint, Error> GetShipValue(const std::variant<uint, std::wstring>& player)
 	{
 		ClientId client = Hk::Client::ExtractClientID(player);
 		if (client != -1 && !Hk::Client::IsInCharSelectMenu(client))
@@ -1819,7 +1829,7 @@ namespace Hk::Player
 			}
 		}
 
-		return fValue;
+		return static_cast<uint>(fValue);
 	}
 
 	void SaveChar(ClientId client)

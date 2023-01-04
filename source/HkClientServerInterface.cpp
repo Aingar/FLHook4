@@ -71,7 +71,7 @@ namespace IServerImplHook
 		{
 			for (auto& timer : plugin.timers)
 			{
-				if ((currentTime - timer.lastTime) >= (timer.intervalInSeconds * 100))
+				if ((currentTime - timer.lastTime) >= (timer.intervalInSeconds * 1000))
 				{
 					timer.lastTime = currentTime;
 					timer.func();
@@ -282,7 +282,7 @@ namespace IServerImplHook
 			{
 				if (i.character == charName)
 				{
-					Hk::Player::AddCash(charName, i.iAmount);
+					Hk::Player::AddCash(charName, i.uAmount);
 					ClientInfo[client].lstMoneyFix.remove(i);
 					break;
 				}
@@ -458,7 +458,7 @@ void BaseEnter__InnerAfter(uint baseId, ClientId client)
 		{
 			if (i.character == charName)
 			{
-				Hk::Player::AddCash(charName, i.iAmount);
+				Hk::Player::AddCash(charName, i.uAmount);
 				ClientInfo[client].lstMoneyFix.remove(i);
 				break;
 			}
@@ -4472,15 +4472,8 @@ namespace IServerImplHook
 {
 	void __stdcall SubmitChat(CHAT_ID cidFrom, ulong size, void const* rdlReader, CHAT_ID cidTo, int _genArg1)
 	{
-		AddLog(LogType::Normal,
-		    LogLevel::Debug,
-		    wstos(fmt::format(L"SubmitChat(\n\tCHAT_ID cidFrom = {}\n\tulong size = {}\n\tvoid const* rdlReader = 0x{:08X}\n\tCHAT_ID cidTo = "
-		    L"{}\n\tint _genArg1 = {}\n)",
-		    ToLogString(cidFrom),
-		    size,
-		    fmt::ptr(rdlReader),
-		    ToLogString(cidTo),
-		    _genArg1)));
+
+		AddLog(LogType::Normal, LogLevel::Debug, fmt::format("SubmitChat(\n\tuint From = {}\n\tulong size = {}\n\tuint cidTo = {}", cidFrom.iId, size, cidTo.iId));
 
 		auto skip = CallPluginsBefore<void>(HookedCall::IServerImpl__SubmitChat, cidFrom.iId, size, rdlReader, cidTo.iId, _genArg1);
 
