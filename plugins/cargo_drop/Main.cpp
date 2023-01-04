@@ -57,7 +57,7 @@ namespace Plugins::CargoDrop
 	/** @ingroup CargoDrop
 	 * @brief Timer that checks if a player has disconnected and punished them if so.
 	 */
-	void OneSecondTimer()
+	void DisconnectCheck()
 	{
 		// Disconnecting while interacting checks.
 		for (auto& [client, snd] : global->info)
@@ -137,6 +137,10 @@ namespace Plugins::CargoDrop
 		}
 	}
 
+	const std::vector<Timer> timers = {
+		{DisconnectCheck, 1}
+	};
+
 	/** @ingroup CargoDrop
 	 * @brief Hook for ship destruction. It's easier to hook this than the PlayerDeath one. Drop a percentage of cargo + some loot representing ship bits.
 	 */
@@ -213,12 +217,12 @@ DefaultDllMainSettings(LoadSettings)
 	pi->name("Cargo Drop");
 	pi->shortName("cargo_drop");
 	pi->mayUnload(true);
+	pi->timers(timers);
 	pi->returnCode(&global->returnCode);
 	pi->versionMajor(PluginMajorVersion::VERSION_04);
 	pi->versionMinor(PluginMinorVersion::VERSION_00);
 	pi->emplaceHook(HookedCall::FLHook__ClearClientInfo, &ClearClientInfo);
 	pi->emplaceHook(HookedCall::FLHook__LoadSettings, &LoadSettings, HookStep::After);
-	pi->emplaceHook(HookedCall::FLHook__TimerCheckKick, &OneSecondTimer);
 	pi->emplaceHook(HookedCall::IEngine__SendDeathMessage, &SendDeathMsg);
 	pi->emplaceHook(HookedCall::IServerImpl__SPObjUpdate, &SPObjUpdate);
 }

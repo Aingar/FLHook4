@@ -140,8 +140,7 @@ namespace Plugins::Restart
 	}
 
 	/* Hooks */
-
-	void OneSecondTimer()
+	void ProcessPendingRestarts()
 	{
 		while (global->pendingRestarts.size())
 		{
@@ -182,6 +181,10 @@ namespace Plugins::Restart
 		}
 	}
 
+	const std::vector<Timer> timers = {
+		{ProcessPendingRestarts, 1}
+	};
+
 	// Client command processing
 	const std::vector commands = {{
 	    CreateUserCommand(L"/restart", L"<name>", UserCmd_Restart, L"Restart with a template. This wipes your character!"),
@@ -202,9 +205,9 @@ DefaultDllMainSettings(LoadSettings)
 	pi->shortName("restarts");
 	pi->mayUnload(true);
 	pi->commands(commands);
+	pi->timers(timers);
 	pi->returnCode(&global->returnCode);
 	pi->versionMajor(PluginMajorVersion::VERSION_04);
 	pi->versionMinor(PluginMinorVersion::VERSION_00);
 	pi->emplaceHook(HookedCall::FLHook__LoadSettings, &LoadSettings, HookStep::After);
-	pi->emplaceHook(HookedCall::FLHook__TimerCheckKick, &OneSecondTimer);
 }
